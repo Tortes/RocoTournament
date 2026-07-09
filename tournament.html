@@ -1,0 +1,1311 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>洛克对战系统</title>
+    <style>
+      :root {
+        --page: #f4f7f5;
+        --page-alt: #eef3f7;
+        --panel: #ffffff;
+        --ink: #223039;
+        --muted: #6a7881;
+        --line: #d8e2e3;
+        --line-strong: #b9cacc;
+        --green: #267865;
+        --green-dark: #1f6a59;
+        --coral: #c95642;
+        --gold: #d69a22;
+        --blue: #4a80c2;
+        --shadow: 0 12px 30px rgba(34, 48, 57, 0.1);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        min-height: 100%;
+        background: var(--page);
+        color: var(--ink);
+        font-family: "Inter", "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0;
+      }
+
+      body {
+        min-height: 100vh;
+        margin: 0;
+        background: linear-gradient(180deg, var(--page) 0%, var(--page-alt) 50%, #f7f1eb 100%);
+      }
+
+      button,
+      input,
+      select,
+      textarea {
+        font: inherit;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.58;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .app-shell {
+        width: min(1440px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 28px 0 40px;
+      }
+
+      .topbar {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 20px;
+        padding: 6px 0 18px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .eyebrow {
+        margin: 0 0 8px;
+        color: var(--green);
+        font-size: 13px;
+        font-weight: 800;
+      }
+
+      h1,
+      h2,
+      h3 {
+        margin: 0;
+        line-height: 1.2;
+      }
+
+      h1 {
+        font-size: 28px;
+      }
+
+      h2 {
+        font-size: 20px;
+      }
+
+      h3 {
+        font-size: 16px;
+      }
+
+      .actions,
+      .inline-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .actions {
+        justify-content: flex-end;
+      }
+
+      .button,
+      .link-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 40px;
+        padding: 0 13px;
+        border-radius: 8px;
+        white-space: nowrap;
+      }
+
+      .button svg,
+      .link-button svg {
+        width: 18px;
+        height: 18px;
+        flex: 0 0 auto;
+      }
+
+      .button.primary {
+        border: 1px solid var(--green-dark);
+        background: var(--green);
+        color: #fff;
+        font-weight: 800;
+        box-shadow: 0 10px 18px rgba(38, 120, 101, 0.22);
+      }
+
+      .button.primary:hover {
+        background: var(--green-dark);
+      }
+
+      .button.secondary,
+      .link-button {
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.72);
+        color: var(--muted);
+        font-weight: 700;
+      }
+
+      .button.secondary:hover,
+      .link-button:hover {
+        border-color: var(--line-strong);
+        color: var(--ink);
+      }
+
+      .button.danger {
+        border: 1px solid rgba(201, 86, 66, 0.36);
+        background: rgba(201, 86, 66, 0.08);
+        color: #9b3c2f;
+        font-weight: 800;
+      }
+
+      .button.small {
+        min-height: 32px;
+        padding: 0 10px;
+        font-size: 13px;
+      }
+
+      .status-strip {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        margin: 18px 0 16px;
+      }
+
+      .tags {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        min-height: 30px;
+        padding: 0 10px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.72);
+        color: #43515a;
+        font-size: 13px;
+        font-weight: 800;
+      }
+
+      .save-state {
+        color: var(--muted);
+        font-size: 14px;
+        white-space: nowrap;
+      }
+
+      .workspace {
+        display: grid;
+        grid-template-columns: minmax(360px, 440px) minmax(0, 1fr);
+        gap: 16px;
+        align-items: start;
+      }
+
+      .panel {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.82);
+        box-shadow: var(--shadow);
+      }
+
+      .panel-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .panel-body {
+        padding: 14px 16px 16px;
+      }
+
+      .form-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+
+      .field,
+      .select-field {
+        width: 100%;
+        min-height: 40px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+        color: var(--ink);
+        padding: 0 11px;
+        outline: none;
+      }
+
+      .field:focus,
+      .select-field:focus {
+        border-color: var(--green);
+        box-shadow: 0 0 0 3px rgba(38, 120, 101, 0.12);
+      }
+
+      .help-text {
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .player-list {
+        display: grid;
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .player-card {
+        display: grid;
+        gap: 10px;
+        padding: 12px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+      }
+
+      .player-head {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .manual-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px;
+      }
+
+      .roster-mini {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 6px;
+      }
+
+      .pet-slot {
+        min-height: 62px;
+        display: grid;
+        place-items: center;
+        border: 1px dashed var(--line-strong);
+        border-radius: 8px;
+        background: rgba(244, 247, 245, 0.8);
+        overflow: hidden;
+      }
+
+      .pet-slot.filled {
+        border-style: solid;
+        background: #fff;
+      }
+
+      .pet-slot img {
+        width: 48px;
+        height: 48px;
+        object-fit: contain;
+        filter: drop-shadow(0 4px 5px rgba(34, 48, 57, 0.14));
+      }
+
+      .pet-slot span {
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 800;
+      }
+
+      .player-tools {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .main-flow {
+        display: grid;
+        gap: 16px;
+      }
+
+      .group-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .group-card {
+        display: grid;
+        gap: 14px;
+      }
+
+      .standings {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .standings th,
+      .standings td {
+        border-bottom: 1px solid rgba(34, 48, 57, 0.08);
+        padding: 10px 8px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      .standings th {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      .standing-player {
+        min-width: 180px;
+      }
+
+      .player-name-line {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 7px;
+        font-weight: 900;
+      }
+
+      .rank-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 26px;
+        height: 22px;
+        border-radius: 7px;
+        background: rgba(34, 48, 57, 0.07);
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      .rank-pill.top {
+        background: rgba(214, 154, 34, 0.18);
+        color: #9f6d10;
+      }
+
+      .number-input {
+        width: 82px;
+        min-height: 36px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+        color: var(--ink);
+        padding: 0 8px;
+      }
+
+      .match-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .match-chip {
+        min-height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 8px 10px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.8);
+        color: #43515a;
+        font-size: 13px;
+        font-weight: 800;
+        text-align: center;
+      }
+
+      .bracket-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .match-card {
+        display: grid;
+        gap: 12px;
+        min-height: 180px;
+        padding: 13px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+      }
+
+      .match-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 900;
+      }
+
+      .versus {
+        display: grid;
+        gap: 8px;
+      }
+
+      .versus-player {
+        display: grid;
+        gap: 6px;
+        padding: 9px;
+        border: 1px solid rgba(34, 48, 57, 0.08);
+        border-radius: 8px;
+        background: rgba(244, 247, 245, 0.78);
+      }
+
+      .versus-player strong {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .result-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .result-card {
+        min-height: 82px;
+        display: grid;
+        gap: 5px;
+        padding: 12px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+      }
+
+      .result-card span {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      .result-card strong {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 16px;
+      }
+
+      .empty-state {
+        min-height: 120px;
+        display: grid;
+        place-items: center;
+        border: 1px dashed var(--line-strong);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.58);
+        color: var(--muted);
+        text-align: center;
+        padding: 18px;
+      }
+
+      .compact-roster {
+        grid-template-columns: repeat(6, 34px);
+        justify-content: start;
+        gap: 4px;
+      }
+
+      .compact-roster .pet-slot {
+        min-height: 34px;
+        border-radius: 7px;
+      }
+
+      .compact-roster .pet-slot img {
+        width: 30px;
+        height: 30px;
+      }
+
+      @media (max-width: 1180px) {
+        .workspace {
+          grid-template-columns: 1fr;
+        }
+
+        .group-grid,
+        .bracket-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .app-shell {
+          width: min(100% - 20px, 680px);
+          padding-top: 18px;
+        }
+
+        .topbar,
+        .status-strip,
+        .panel-head {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        .actions,
+        .button,
+        .link-button {
+          width: 100%;
+        }
+
+        .form-row,
+        .player-head,
+        .manual-row {
+          grid-template-columns: 1fr;
+        }
+
+        .save-state {
+          white-space: normal;
+        }
+
+        .match-list,
+        .result-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .standings {
+          min-width: 620px;
+        }
+
+        .table-scroll {
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">洛克王国手游</p>
+          <h1>对战赛事系统</h1>
+        </div>
+        <div class="actions">
+          <a class="link-button" href="./index.html">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
+              <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+            随机抽选页
+          </a>
+          <button class="button danger" id="resetAllButton" type="button">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
+              <path d="M3 6h18M8 6V4h8v2M6 6l1 15h10l1-15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+            清空赛事
+          </button>
+        </div>
+      </header>
+
+      <section class="status-strip">
+        <div class="tags">
+          <span class="tag">参赛人员本地保存</span>
+          <span class="tag">随机或手动 6 只精灵</span>
+          <span class="tag">双组循环赛</span>
+          <span class="tag">半决赛 / 决赛 / 季军赛</span>
+        </div>
+        <div class="save-state" id="saveState">正在加载精灵数据</div>
+      </section>
+
+      <div class="workspace">
+        <section class="panel" aria-label="参赛人员">
+          <div class="panel-head">
+            <h2>参赛人员</h2>
+            <button class="button secondary small" id="rollAllButton" type="button">全部随机</button>
+          </div>
+          <div class="panel-body">
+            <div class="form-row">
+              <input class="field" id="newPlayerName" type="text" maxlength="24" placeholder="输入玩家名">
+              <button class="button primary" id="addPlayerButton" type="button">添加</button>
+            </div>
+            <div class="help-text">手动填入时使用精灵编号，支持空格、逗号、顿号分隔，例如：001 011 018 044 080 277。</div>
+            <div class="player-list" id="playerList"></div>
+          </div>
+        </section>
+
+        <div class="main-flow">
+          <section class="panel" aria-label="小组赛">
+            <div class="panel-head">
+              <h2>小组赛</h2>
+              <div class="inline-actions">
+                <button class="button secondary" id="createGroupsButton" type="button">划分两组</button>
+                <button class="button primary" id="enterKnockoutButton" type="button">进入淘汰赛</button>
+              </div>
+            </div>
+            <div class="panel-body" id="groupStage"></div>
+          </section>
+
+          <section class="panel" aria-label="淘汰赛">
+            <div class="panel-head">
+              <h2>淘汰赛</h2>
+              <div class="help-text">每组选出前两名，A1 对 B2，B1 对 A2。</div>
+            </div>
+            <div class="panel-body" id="knockoutStage"></div>
+          </section>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      const STORAGE_KEY = "rocom-battle-system-state";
+      const PET_COUNT = 6;
+      const GROUP_NAMES = ["A", "B"];
+
+      const state = loadState();
+      let pets = [];
+      let petByNo = new Map();
+
+      const saveStateEl = document.querySelector("#saveState");
+      const playerList = document.querySelector("#playerList");
+      const groupStage = document.querySelector("#groupStage");
+      const knockoutStage = document.querySelector("#knockoutStage");
+      const newPlayerName = document.querySelector("#newPlayerName");
+      const addPlayerButton = document.querySelector("#addPlayerButton");
+      const rollAllButton = document.querySelector("#rollAllButton");
+      const createGroupsButton = document.querySelector("#createGroupsButton");
+      const enterKnockoutButton = document.querySelector("#enterKnockoutButton");
+      const resetAllButton = document.querySelector("#resetAllButton");
+
+      init();
+
+      async function init() {
+        wireEvents();
+        try {
+          pets = await loadPets();
+          petByNo = new Map(pets.map((pet) => [pet.no, pet]));
+          normalizeState();
+          setStatus(`已加载 ${pets.length} 只候选精灵，数据自动保存在本地`);
+          renderAll();
+        } catch (error) {
+          setStatus(`精灵数据加载失败：${error.message}`);
+          renderAll();
+        }
+      }
+
+      function wireEvents() {
+        addPlayerButton.addEventListener("click", addPlayer);
+        newPlayerName.addEventListener("keydown", (event) => {
+          if (event.key === "Enter") {
+            addPlayer();
+          }
+        });
+        rollAllButton.addEventListener("click", () => {
+          state.participants.forEach((participant) => {
+            participant.team = rollPetNos();
+          });
+          saveAndRender();
+        });
+        createGroupsButton.addEventListener("click", createGroups);
+        enterKnockoutButton.addEventListener("click", enterKnockout);
+        resetAllButton.addEventListener("click", () => {
+          if (!confirm("确认清空所有参赛人员、分组和比赛结果？")) {
+            return;
+          }
+          state.participants = [];
+          state.groups = null;
+          state.groupStats = {};
+          state.bracket = null;
+          saveAndRender();
+        });
+      }
+
+      async function loadPets() {
+        const response = await fetch("./index.html", { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const html = await response.text();
+        const match = html.match(/const FALLBACK_PETS = (\[[\s\S]*?\]);\n\n      const TYPE_COLORS/);
+        if (!match) {
+          throw new Error("未找到候选池");
+        }
+        const parsed = JSON.parse(match[1]);
+        if (!Array.isArray(parsed) || parsed.length < PET_COUNT) {
+          throw new Error("候选池数量不足");
+        }
+        return parsed;
+      }
+
+      function loadState() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) {
+            return defaultState();
+          }
+          const parsed = JSON.parse(raw);
+          return {
+            participants: Array.isArray(parsed.participants) ? parsed.participants : [],
+            groups: parsed.groups || null,
+            groupStats: parsed.groupStats || {},
+            bracket: parsed.bracket || null
+          };
+        } catch {
+          return defaultState();
+        }
+      }
+
+      function defaultState() {
+        return {
+          participants: [],
+          groups: null,
+          groupStats: {},
+          bracket: null
+        };
+      }
+
+      function normalizeState() {
+        state.participants = state.participants
+          .filter((participant) => participant && participant.id)
+          .map((participant) => ({
+            id: participant.id,
+            name: cleanName(participant.name) || "未命名玩家",
+            team: Array.isArray(participant.team) ? participant.team.filter((no) => petByNo.has(no)).slice(0, PET_COUNT) : []
+          }));
+        const ids = new Set(state.participants.map((participant) => participant.id));
+        if (state.groups) {
+          state.groups = {
+            A: (state.groups.A || []).filter((id) => ids.has(id)),
+            B: (state.groups.B || []).filter((id) => ids.has(id))
+          };
+        }
+        Object.keys(state.groupStats || {}).forEach((id) => {
+          if (!ids.has(id)) {
+            delete state.groupStats[id];
+          }
+        });
+      }
+
+      function saveState() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+          setStatus("已保存到本地");
+        } catch (error) {
+          setStatus("本地保存不可用");
+        }
+      }
+
+      function saveAndRender() {
+        normalizeState();
+        saveState();
+        renderAll();
+      }
+
+      function setStatus(message) {
+        saveStateEl.textContent = message;
+      }
+
+      function renderAll() {
+        renderParticipants();
+        renderGroupStage();
+        renderKnockout();
+        createGroupsButton.disabled = state.participants.length < 4 || pets.length < PET_COUNT;
+        enterKnockoutButton.disabled = !canEnterKnockout();
+        rollAllButton.disabled = state.participants.length === 0 || pets.length < PET_COUNT;
+      }
+
+      function addPlayer() {
+        const name = cleanName(newPlayerName.value);
+        if (!name) {
+          setStatus("请输入玩家名");
+          return;
+        }
+        state.participants.push({
+          id: createId(),
+          name,
+          team: []
+        });
+        newPlayerName.value = "";
+        resetProgressAfterParticipantChange();
+        saveAndRender();
+      }
+
+      function removePlayer(id) {
+        state.participants = state.participants.filter((participant) => participant.id !== id);
+        resetProgressAfterParticipantChange();
+        saveAndRender();
+      }
+
+      function resetProgressAfterParticipantChange() {
+        state.groups = null;
+        state.groupStats = {};
+        state.bracket = null;
+      }
+
+      function renderParticipants() {
+        if (state.participants.length === 0) {
+          const empty = document.createElement("div");
+          empty.className = "empty-state";
+          empty.textContent = "先添加参赛人员";
+          playerList.replaceChildren(empty);
+          return;
+        }
+        playerList.replaceChildren(...state.participants.map(renderParticipantCard));
+      }
+
+      function renderParticipantCard(participant) {
+        const card = document.createElement("article");
+        card.className = "player-card";
+
+        const head = document.createElement("div");
+        head.className = "player-head";
+        const nameInput = document.createElement("input");
+        nameInput.className = "field";
+        nameInput.maxLength = 24;
+        nameInput.value = participant.name;
+        nameInput.addEventListener("change", () => {
+          participant.name = cleanName(nameInput.value) || participant.name;
+          nameInput.value = participant.name;
+          saveAndRender();
+        });
+        const remove = document.createElement("button");
+        remove.className = "button danger small";
+        remove.type = "button";
+        remove.textContent = "移除";
+        remove.addEventListener("click", () => removePlayer(participant.id));
+        head.append(nameInput, remove);
+
+        const roster = renderRoster(participant.team, false);
+
+        const tools = document.createElement("div");
+        tools.className = "player-tools";
+        const roll = document.createElement("button");
+        roll.className = "button primary small";
+        roll.type = "button";
+        roll.textContent = "随机 6 只";
+        roll.disabled = pets.length < PET_COUNT;
+        roll.addEventListener("click", () => {
+          participant.team = rollPetNos();
+          saveAndRender();
+        });
+        const clear = document.createElement("button");
+        clear.className = "button secondary small";
+        clear.type = "button";
+        clear.textContent = "清空精灵";
+        clear.addEventListener("click", () => {
+          participant.team = [];
+          saveAndRender();
+        });
+        tools.append(roll, clear);
+
+        const manual = document.createElement("div");
+        manual.className = "manual-row";
+        const manualInput = document.createElement("input");
+        manualInput.className = "field";
+        manualInput.placeholder = "手动输入 6 个编号";
+        manualInput.value = participant.team.join(" ");
+        const apply = document.createElement("button");
+        apply.className = "button secondary";
+        apply.type = "button";
+        apply.textContent = "应用编号";
+        apply.addEventListener("click", () => {
+          const result = parseTeamInput(manualInput.value);
+          if (!result.ok) {
+            setStatus(result.message);
+            return;
+          }
+          participant.team = result.nos;
+          saveAndRender();
+        });
+        manual.append(manualInput, apply);
+
+        card.append(head, roster, tools, manual);
+        return card;
+      }
+
+      function renderRoster(team, compact) {
+        const roster = document.createElement("div");
+        roster.className = compact ? "roster-mini compact-roster" : "roster-mini";
+        for (let index = 0; index < PET_COUNT; index += 1) {
+          const slot = document.createElement("div");
+          const pet = petByNo.get(team[index]);
+          slot.className = pet ? "pet-slot filled" : "pet-slot";
+          if (pet) {
+            const img = document.createElement("img");
+            img.src = pet.image;
+            img.alt = pet.displayName;
+            img.title = `NO.${pet.no} ${pet.displayName}`;
+            img.loading = "lazy";
+            img.decoding = "async";
+            slot.append(img);
+          } else {
+            const label = document.createElement("span");
+            label.textContent = index + 1;
+            slot.append(label);
+          }
+          roster.append(slot);
+        }
+        return roster;
+      }
+
+      function createGroups() {
+        if (state.participants.length < 4) {
+          setStatus("至少需要 4 名参赛人员");
+          return;
+        }
+        const ids = shuffle(state.participants.map((participant) => participant.id));
+        state.groups = { A: [], B: [] };
+        ids.forEach((id, index) => {
+          state.groups[index % 2 === 0 ? "A" : "B"].push(id);
+        });
+        state.groupStats = {};
+        state.participants.forEach((participant) => {
+          state.groupStats[participant.id] = { wins: 0, remaining: 0 };
+        });
+        state.bracket = null;
+        saveAndRender();
+      }
+
+      function renderGroupStage() {
+        if (!state.groups) {
+          const empty = document.createElement("div");
+          empty.className = "empty-state";
+          empty.textContent = "添加至少 4 名参赛人员后，点击划分两组";
+          groupStage.replaceChildren(empty);
+          return;
+        }
+        const grid = document.createElement("div");
+        grid.className = "group-grid";
+        GROUP_NAMES.forEach((groupName) => grid.append(renderGroup(groupName)));
+        groupStage.replaceChildren(grid);
+      }
+
+      function renderGroup(groupName) {
+        const ids = state.groups[groupName] || [];
+        const panel = document.createElement("section");
+        panel.className = "group-card";
+
+        const title = document.createElement("h3");
+        title.textContent = `${groupName} 组`;
+
+        const tableWrap = document.createElement("div");
+        tableWrap.className = "table-scroll";
+        const table = document.createElement("table");
+        table.className = "standings";
+        const thead = document.createElement("thead");
+        thead.innerHTML = "<tr><th>排名</th><th>玩家</th><th>胜场</th><th>存活精灵</th></tr>";
+        const tbody = document.createElement("tbody");
+        rankGroup(groupName).forEach((entry, index) => tbody.append(renderStandingRow(entry, index)));
+        table.append(thead, tbody);
+        tableWrap.append(table);
+
+        const matchTitle = document.createElement("h3");
+        matchTitle.textContent = "循环赛对阵";
+        const matchList = document.createElement("div");
+        matchList.className = "match-list";
+        const pairs = createRoundRobinPairs(ids);
+        if (pairs.length === 0) {
+          const empty = document.createElement("div");
+          empty.className = "empty-state";
+          empty.textContent = "本组人数不足";
+          matchList.append(empty);
+        } else {
+          pairs.forEach(([left, right]) => {
+            const chip = document.createElement("div");
+            chip.className = "match-chip";
+            chip.textContent = `${getPlayer(left)?.name || "未知"} vs ${getPlayer(right)?.name || "未知"}`;
+            matchList.append(chip);
+          });
+        }
+
+        panel.append(title, tableWrap, matchTitle, matchList);
+        return panel;
+      }
+
+      function renderStandingRow(entry, index) {
+        const row = document.createElement("tr");
+
+        const rankCell = document.createElement("td");
+        const rank = document.createElement("span");
+        rank.className = index < 2 ? "rank-pill top" : "rank-pill";
+        rank.textContent = index + 1;
+        rankCell.append(rank);
+
+        const playerCell = document.createElement("td");
+        playerCell.className = "standing-player";
+        const line = document.createElement("div");
+        line.className = "player-name-line";
+        line.textContent = entry.player.name;
+        playerCell.append(line, renderRoster(entry.player.team, true));
+
+        const winsCell = document.createElement("td");
+        const wins = document.createElement("input");
+        wins.className = "number-input";
+        wins.type = "number";
+        wins.min = "0";
+        wins.step = "1";
+        wins.value = entry.stats.wins;
+        wins.addEventListener("change", () => {
+          setGroupStat(entry.player.id, "wins", wins.value);
+          saveAndRender();
+        });
+        winsCell.append(wins);
+
+        const remainingCell = document.createElement("td");
+        const remaining = document.createElement("input");
+        remaining.className = "number-input";
+        remaining.type = "number";
+        remaining.min = "0";
+        remaining.step = "1";
+        remaining.value = entry.stats.remaining;
+        remaining.addEventListener("change", () => {
+          setGroupStat(entry.player.id, "remaining", remaining.value);
+          saveAndRender();
+        });
+        remainingCell.append(remaining);
+
+        row.append(rankCell, playerCell, winsCell, remainingCell);
+        return row;
+      }
+
+      function setGroupStat(id, field, value) {
+        if (!state.groupStats[id]) {
+          state.groupStats[id] = { wins: 0, remaining: 0 };
+        }
+        state.groupStats[id][field] = Math.max(0, Number.parseInt(value, 10) || 0);
+        state.bracket = null;
+      }
+
+      function rankGroup(groupName) {
+        const ids = state.groups?.[groupName] || [];
+        return ids
+          .map((id, order) => ({
+            player: getPlayer(id),
+            stats: state.groupStats[id] || { wins: 0, remaining: 0 },
+            order
+          }))
+          .filter((entry) => entry.player)
+          .sort((a, b) => b.stats.wins - a.stats.wins || b.stats.remaining - a.stats.remaining || a.order - b.order);
+      }
+
+      function canEnterKnockout() {
+        return Boolean(state.groups && GROUP_NAMES.every((groupName) => (state.groups[groupName] || []).length >= 2));
+      }
+
+      function enterKnockout() {
+        if (!canEnterKnockout()) {
+          setStatus("每组至少需要 2 名玩家才能进入淘汰赛");
+          return;
+        }
+        const rankedA = rankGroup("A");
+        const rankedB = rankGroup("B");
+        state.bracket = {
+          semis: [
+            { id: "S1", label: "半决赛 1", players: [rankedA[0].player.id, rankedB[1].player.id], winnerId: "" },
+            { id: "S2", label: "半决赛 2", players: [rankedB[0].player.id, rankedA[1].player.id], winnerId: "" }
+          ],
+          final: { id: "F", label: "决赛", players: [], winnerId: "" },
+          third: { id: "T", label: "季军赛", players: [], winnerId: "" }
+        };
+        saveAndRender();
+      }
+
+      function renderKnockout() {
+        if (!state.bracket) {
+          const empty = document.createElement("div");
+          empty.className = "empty-state";
+          empty.textContent = "小组赛结束后点击进入淘汰赛";
+          knockoutStage.replaceChildren(empty);
+          return;
+        }
+        syncFinalMatches();
+        const grid = document.createElement("div");
+        grid.className = "bracket-grid";
+        state.bracket.semis.forEach((match) => grid.append(renderMatch(match, "semi")));
+        grid.append(renderMatch(state.bracket.final, "final"));
+        grid.append(renderMatch(state.bracket.third, "third"));
+
+        const results = renderResults();
+        knockoutStage.replaceChildren(grid, results);
+      }
+
+      function renderMatch(match, kind) {
+        const card = document.createElement("article");
+        card.className = "match-card";
+        const title = document.createElement("div");
+        title.className = "match-title";
+        title.textContent = match.label;
+
+        const versus = document.createElement("div");
+        versus.className = "versus";
+        if (match.players.length < 2) {
+          const empty = document.createElement("div");
+          empty.className = "empty-state";
+          empty.textContent = kind === "semi" ? "等待选手" : "等待半决赛结果";
+          versus.append(empty);
+        } else {
+          match.players.forEach((id) => versus.append(renderVersusPlayer(id)));
+        }
+
+        const select = document.createElement("select");
+        select.className = "select-field";
+        select.disabled = match.players.length < 2;
+        appendOption(select, "", "选择胜者");
+        match.players.forEach((id) => appendOption(select, id, getPlayer(id)?.name || "未知玩家"));
+        select.value = match.winnerId || "";
+        select.addEventListener("change", () => {
+          match.winnerId = select.value;
+          syncFinalMatches();
+          saveAndRender();
+        });
+
+        card.append(title, versus, select);
+        return card;
+      }
+
+      function renderVersusPlayer(id) {
+        const player = getPlayer(id);
+        const box = document.createElement("div");
+        box.className = "versus-player";
+        const name = document.createElement("strong");
+        name.textContent = player?.name || "未知玩家";
+        box.append(name, renderRoster(player?.team || [], true));
+        return box;
+      }
+
+      function syncFinalMatches() {
+        if (!state.bracket) {
+          return;
+        }
+        const winners = [];
+        const losers = [];
+        state.bracket.semis.forEach((match) => {
+          if (!match.winnerId) {
+            return;
+          }
+          winners.push(match.winnerId);
+          losers.push(match.players.find((id) => id !== match.winnerId));
+        });
+        if (winners.length === 2 && losers.length === 2) {
+          state.bracket.final.players = winners;
+          state.bracket.third.players = losers;
+        } else {
+          state.bracket.final.players = [];
+          state.bracket.third.players = [];
+        }
+        if (!state.bracket.final.players.includes(state.bracket.final.winnerId)) {
+          state.bracket.final.winnerId = "";
+        }
+        if (!state.bracket.third.players.includes(state.bracket.third.winnerId)) {
+          state.bracket.third.winnerId = "";
+        }
+      }
+
+      function renderResults() {
+        const wrap = document.createElement("div");
+        wrap.className = "result-grid";
+        const finalWinner = state.bracket.final.winnerId;
+        const finalLoser = state.bracket.final.players.find((id) => id && id !== finalWinner);
+        const thirdWinner = state.bracket.third.winnerId;
+        const fourth = state.bracket.third.players.find((id) => id && id !== thirdWinner);
+        [
+          ["冠军", finalWinner],
+          ["亚军", finalWinner ? finalLoser : ""],
+          ["季军", thirdWinner],
+          ["第四名", thirdWinner ? fourth : ""]
+        ].forEach(([label, id]) => {
+          const card = document.createElement("div");
+          card.className = "result-card";
+          const title = document.createElement("span");
+          title.textContent = label;
+          const value = document.createElement("strong");
+          value.textContent = id ? getPlayer(id)?.name || "未知玩家" : "未决出";
+          card.append(title, value);
+          wrap.append(card);
+        });
+        return wrap;
+      }
+
+      function appendOption(select, value, text) {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = text;
+        select.append(option);
+      }
+
+      function parseTeamInput(value) {
+        const nos = String(value || "")
+          .split(/[\s,，;；、]+/)
+          .map((item) => item.trim())
+          .filter(Boolean)
+          .map(normalizeNo);
+        const unique = [...new Set(nos)];
+        if (unique.length !== PET_COUNT) {
+          return { ok: false, message: "请填写 6 个不重复的有效编号" };
+        }
+        const invalid = unique.filter((no) => !petByNo.has(no));
+        if (invalid.length) {
+          return { ok: false, message: `编号不可用：${invalid.join(", ")}` };
+        }
+        return { ok: true, nos: unique };
+      }
+
+      function normalizeNo(value) {
+        const digits = String(value || "").replace(/\D/g, "");
+        return digits.padStart(3, "0").slice(-3);
+      }
+
+      function rollPetNos() {
+        return shuffle(pets).slice(0, PET_COUNT).map((pet) => pet.no);
+      }
+
+      function createRoundRobinPairs(ids) {
+        const pairs = [];
+        for (let i = 0; i < ids.length; i += 1) {
+          for (let j = i + 1; j < ids.length; j += 1) {
+            pairs.push([ids[i], ids[j]]);
+          }
+        }
+        return pairs;
+      }
+
+      function getPlayer(id) {
+        return state.participants.find((participant) => participant.id === id);
+      }
+
+      function shuffle(list) {
+        const pool = [...list];
+        for (let i = pool.length - 1; i > 0; i -= 1) {
+          const j = randomInt(i + 1);
+          [pool[i], pool[j]] = [pool[j], pool[i]];
+        }
+        return pool;
+      }
+
+      function randomInt(max) {
+        if (window.crypto?.getRandomValues) {
+          const range = 0x100000000;
+          const limit = range - (range % max);
+          const value = new Uint32Array(1);
+          do {
+            window.crypto.getRandomValues(value);
+          } while (value[0] >= limit);
+          return value[0] % max;
+        }
+        return Math.floor(Math.random() * max);
+      }
+
+      function createId() {
+        if (window.crypto?.randomUUID) {
+          return window.crypto.randomUUID();
+        }
+        return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      }
+
+      function cleanName(value) {
+        return String(value || "").replace(/\s+/g, " ").trim();
+      }
+    </script>
+  </body>
+</html>
