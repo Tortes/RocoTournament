@@ -311,6 +311,11 @@
         background: #fff;
       }
 
+      .pet-slot.custom {
+        background: #fff8ec;
+        border-color: rgba(214, 154, 34, 0.42);
+      }
+
       .pet-slot img {
         width: 48px;
         height: 48px;
@@ -322,6 +327,9 @@
         color: var(--muted);
         font-size: 11px;
         font-weight: 800;
+        max-width: 100%;
+        overflow-wrap: anywhere;
+        text-align: center;
       }
 
       .player-tools {
@@ -612,7 +620,7 @@
       <section class="status-strip">
         <div class="tags">
           <span class="tag">参赛人员本地保存</span>
-          <span class="tag">随机或手动 6 只精灵</span>
+          <span class="tag">随机 6 只 / 手动不限</span>
           <span class="tag">双组循环赛</span>
           <span class="tag">半决赛 / 决赛 / 季军赛</span>
         </div>
@@ -630,7 +638,7 @@
               <input class="field" id="newPlayerName" type="text" maxlength="24" placeholder="输入玩家名">
               <button class="button primary" id="addPlayerButton" type="button">添加</button>
             </div>
-            <div class="help-text">手动填入时使用精灵编号，支持空格、逗号、顿号分隔，例如：001 011 018 044 080 277。</div>
+            <div class="help-text">手动填入支持任意编号或名称，使用空格、逗号、顿号分隔。</div>
             <div class="player-list" id="playerList"></div>
           </div>
         </section>
@@ -666,6 +674,7 @@
       const state = loadState();
       let pets = [];
       let petByNo = new Map();
+      let petByName = new Map();
 
       const saveStateEl = document.querySelector("#saveState");
       const playerList = document.querySelector("#playerList");
@@ -685,6 +694,7 @@
         try {
           pets = await loadPets();
           petByNo = new Map(pets.map((pet) => [pet.no, pet]));
+          petByName = createPetNameMap(pets);
           normalizeState();
           setStatus(`已加载 ${pets.length} 只候选精灵，数据自动保存在本地`);
           renderAll();
@@ -771,7 +781,7 @@
           .map((participant) => ({
             id: participant.id,
             name: cleanName(participant.name) || "未命名玩家",
-            team: Array.isArray(participant.team) ? participant.team.filter((no) => petByNo.has(no)).slice(0, PET_COUNT) : []
+            team: normalizeTeam(participant.team)
           }));
         const ids = new Set(state.participants.map((participant) => participant.id));
         if (state.groups) {
@@ -903,7 +913,7 @@
         manual.className = "manual-row";
         const manualInput = document.createElement("input");
         manualInput.className = "field";
-        manualInput.placeholder = "手动输入 6 个编号";
+        manualInput.placeholder = "手动输入任意编号";
         manualInput.value = participant.team.join(" ");
         const apply = document.createElement("button");
         apply.className = "button secondary";
@@ -911,10 +921,6 @@
         apply.textContent = "应用编号";
         apply.addEventListener("click", () => {
           const result = parseTeamInput(manualInput.value);
-          if (!result.ok) {
-            setStatus(result.message);
-            return;
-          }
           participant.team = result.nos;
           saveAndRender();
         });
@@ -927,10 +933,13 @@
       function renderRoster(team, compact) {
         const roster = document.createElement("div");
         roster.className = compact ? "roster-mini compact-roster" : "roster-mini";
-        for (let index = 0; index < PET_COUNT; index += 1) {
+        const entries = normalizeTeam(team);
+        const slotCount = Math.max(PET_COUNT, entries.length);
+        for (let index = 0; index < slotCount; index += 1) {
           const slot = document.createElement("div");
-          const pet = petByNo.get(team[index]);
-          slot.className = pet ? "pet-slot filled" : "pet-slot";
+          const entry = entries[index];
+          const pet = resolvePet(entry);
+          slot.className = pet ? "pet-slot filled" : entry ? "pet-slot filled custom" : "pet-slot";
           if (pet) {
             const img = document.createElement("img");
             img.src = pet.image;
@@ -939,6 +948,11 @@
             img.loading = "lazy";
             img.decoding = "async";
             slot.append(img);
+          } else if (entry) {
+            const label = document.createElement("span");
+            label.textContent = formatManualPetLabel(entry);
+            label.title = entry;
+            slot.append(label);
           } else {
             const label = document.createElement("span");
             label.textContent = index + 1;
@@ -1234,26 +1248,53 @@
         select.append(option);
       }
 
+      function createPetNameMap(list) {
+        const map = new Map();
+        list.forEach((pet) => {
+          [pet.name, pet.displayName, pet.alt].filter(Boolean).forEach((name) => {
+            map.set(name, pet);
+          });
+        });
+        return map;
+      }
+
       function parseTeamInput(value) {
         const nos = String(value || "")
           .split(/[\s,，;；、]+/)
           .map((item) => item.trim())
           .filter(Boolean)
-          .map(normalizeNo);
-        const unique = [...new Set(nos)];
-        if (unique.length !== PET_COUNT) {
-          return { ok: false, message: "请填写 6 个不重复的有效编号" };
-        }
-        const invalid = unique.filter((no) => !petByNo.has(no));
-        if (invalid.length) {
-          return { ok: false, message: `编号不可用：${invalid.join(", ")}` };
-        }
-        return { ok: true, nos: unique };
+          .map(normalizeManualPetEntry);
+        return { ok: true, nos };
       }
 
-      function normalizeNo(value) {
-        const digits = String(value || "").replace(/\D/g, "");
-        return digits.padStart(3, "0").slice(-3);
+      function normalizeTeam(team) {
+        if (!Array.isArray(team)) {
+          return [];
+        }
+        return team
+          .map(normalizeManualPetEntry)
+          .filter(Boolean);
+      }
+
+      function normalizeManualPetEntry(value) {
+        const text = String(value || "").trim();
+        if (/^\d{1,3}$/.test(text)) {
+          return text.padStart(3, "0");
+        }
+        return text;
+      }
+
+      function resolvePet(value) {
+        const entry = normalizeManualPetEntry(value);
+        if (!entry) {
+          return null;
+        }
+        return petByNo.get(entry) || petByName.get(entry) || null;
+      }
+
+      function formatManualPetLabel(value) {
+        const entry = normalizeManualPetEntry(value);
+        return /^\d+$/.test(entry) ? `NO.${entry}` : entry;
       }
 
       function rollPetNos() {
